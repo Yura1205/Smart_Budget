@@ -1,23 +1,23 @@
 import "package:flutter/material.dart";
 
-class Busqueda extends StatefulWidget {
+class Perfil extends StatefulWidget {
   @override
   State<StatefulWidget> createState() {
-    return _Busqueda();
+    return _Perfil();
   }
 }
 
-class _Busqueda extends State<Busqueda> {
+class _Perfil extends State<Perfil> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
         child: Scaffold(
       backgroundColor: Color(0xFF1A1C60),
       appBar: AppBar(
-        title: Text("Búsqueda de Movimientos"),
+        title: Text("Perfil"),
       ),
       body: Center(
-        child: Text("Búsqueda de Movimientos"),
+        child: Text("Perfil"),
       ),
     ));
   }
