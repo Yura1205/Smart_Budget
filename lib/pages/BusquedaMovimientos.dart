@@ -13,9 +13,13 @@ class _Busqueda extends State<Busqueda> {
     return SafeArea(
         child: Scaffold(
       backgroundColor: Color(0xFF1A1C60),
-      appBar: AppBar(
-        title: Text("Búsqueda de Movimientos"),
-      ),
+        appBar: AppBar(
+          title: Text(
+            "Búsqueda de Movimientos",
+            style: TextStyle(color: Colors.white), // Text color is set to white
+          ),
+          backgroundColor: Color(0xFF1A1C60),
+        ),
       body: Center(
         child: Column(
           children: [
