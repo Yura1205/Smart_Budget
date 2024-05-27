@@ -13,9 +13,13 @@ class _Perfil extends State<Perfil> {
     return SafeArea(
         child: Scaffold(
       backgroundColor: Color(0xFF1A1C60),
-      appBar: AppBar(
-        title: Text("Perfil"),
-      ),
+        appBar: AppBar(
+          title: Text(
+            "Perfil",
+            style: TextStyle(color: Colors.white), // Text color is set to white
+          ),
+          backgroundColor: Color(0xFF1A1C60),
+        ),
       body: Center(
         child: Text("Perfil"),
       ),

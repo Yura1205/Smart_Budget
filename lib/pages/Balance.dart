@@ -12,9 +12,13 @@ class _Balance extends State<Balance>{
   Widget build(BuildContext context){
     return SafeArea(child: Scaffold(
       backgroundColor: Color(0xFF1A1C60),
-      appBar: AppBar(
-        title: Text("Balance"),
-      ),
+        appBar: AppBar(
+          title: Text(
+            "Balance",
+            style: TextStyle(color: Colors.white), // Text color is set to white
+          ),
+          backgroundColor: Color(0xFF1A1C60),
+        ),
       body: Center(
         child: Text("Balance"),
       ),
