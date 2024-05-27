@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
 import 'package:smart_budget_app/dataBase_local/db.dart';
 import 'package:sqflite/sqflite.dart';
@@ -107,7 +105,7 @@ class _MovimientosState extends State<Movimientos> {
                       backgroundColor: Colors.white,
                     ),
                     onPressed: () {
-                      openCreateDialog();
+                      openOptionDialog(); // Abre el diálogo de opciones
                     },
                     child: Icon(
                       Icons.add,
@@ -124,10 +122,38 @@ class _MovimientosState extends State<Movimientos> {
     );
   }
 
-  Future openCreateDialog() => showDialog(
+  // Método para abrir el diálogo con opciones
+  Future openOptionDialog() => showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text("Crear Registro"),
+          title: Text("Seleccionar Tipo"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text("Gasto"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  openCreateDialog("Gasto");
+                },
+              ),
+              ListTile(
+                title: Text("Ingreso"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  openCreateDialog("Ingreso");
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+  // Método para abrir el diálogo de crear registro
+  Future openCreateDialog(String type) => showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Crear $type"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -166,57 +192,17 @@ class _MovimientosState extends State<Movimientos> {
         ),
       );
 
-  Future openEditDialog(String title, String subtitle, String value) => showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Editar Registro"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Ingrese el nuevo nombre del movimiento",
-                ),
-                controller: TextEditingController(text: title),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: "Ingrese la nueva descripción del movimiento",
-                ),
-                controller: TextEditingController(text: subtitle),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Ingrese el nuevo valor del movimiento",
-                ),
-                controller: TextEditingController(text: value),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("Cancelar"),
-            ),
-            TextButton(
-              onPressed: () {
-                // Lógica para editar el registro
-                Navigator.of(context).pop();
-              },
-              child: Text("Guardar"),
-            ),
-          ],
-        ),
-      );
-
-  Future openDeleteDialog(String title) => showDialog(
+  // Método original de eliminar para referencia
+  Future openDialog() => showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Text("Eliminar Registro"),
-          content: Text("¿Está seguro que desea eliminar el movimiento \"$title\"?"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("¿Estás seguro de que quieres eliminar este registro?"),
+            ],
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -232,4 +218,55 @@ class _MovimientosState extends State<Movimientos> {
           ],
         ),
       );
+
+  Widget _buildMovimientoItemWithActions(String title, String subtitle, String value) {
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 20),
+      child: ListTile(
+        title: Text(title, style: TextStyle(color: Colors.white)),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(subtitle, style: TextStyle(color: Colors.white70)),
+            SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(value, style: TextStyle(color: Colors.white)),
+                Row(
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        // Add your edit logic here
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF27D0C6), // Blue background color
+                        shape: CircleBorder(), // Make the button circular
+                        minimumSize: Size(36, 36), // Set the size of the button
+                      ),
+                      child: Icon(Icons.edit,
+                          color: Colors.white,
+                          size: 18), // Adjust the size of the icon
+                    ),
+                    SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        openDialog();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFF2003D),
+                        shape: CircleBorder(),
+                        minimumSize: Size(36, 36),
+                      ),
+                      child: Icon(Icons.delete, color: Colors.white, size: 18),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
