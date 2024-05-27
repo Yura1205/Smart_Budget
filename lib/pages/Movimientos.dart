@@ -1,6 +1,8 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
+import 'package:smart_budget_app/dataBase_local/db.dart';
+import 'package:sqflite/sqflite.dart';
 
 class Movimientos extends StatefulWidget {
   @override
@@ -10,6 +12,57 @@ class Movimientos extends StatefulWidget {
 }
 
 class _MovimientosState extends State<Movimientos> {
+  List<Map<String, dynamic>> movimientos = [];
+  Database? _database;
+
+  @override
+  void initState() {
+    super.initState();
+    _initDb();
+  }
+
+  @override
+  void dispose() {
+    _database?.close();
+    super.dispose();
+  }
+
+  Future<void> _initDb() async {
+    _database = await Db().open();
+    await _loadMovimientos();
+  }
+
+  Future<void> _loadMovimientos() async {
+    if (_database == null) return;
+
+    final gastos = await _database!.rawQuery('''
+      SELECT "Gasto" as tipo, cantidad, fecha, categoria, descripcion 
+      FROM gasto 
+      WHERE fecha >= date('now', '-1 month') 
+      ORDER BY fecha DESC
+    ''');
+
+    final ingresos = await _database!.rawQuery('''
+      SELECT "Ingreso" as tipo, cantidad, fecha, categoria, descripcion 
+      FROM ingreso 
+      WHERE fecha >= date('now', '-1 month') 
+      ORDER BY fecha DESC
+    ''');
+
+    setState(() {
+      movimientos = [...gastos, ...ingresos];
+      movimientos.sort((a, b) => b['fecha'].compareTo(a['fecha']));
+    });
+  }
+
+  Widget _buildMovimientoItem(String tipo, String descripcion, String cantidad) {
+    return ListTile(
+      title: Text(tipo, style: TextStyle(color: Colors.white)),
+      subtitle: Text(descripcion, style: TextStyle(color: Colors.white70)),
+      trailing: Text(cantidad, style: TextStyle(color: Colors.white)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -18,7 +71,7 @@ class _MovimientosState extends State<Movimientos> {
         appBar: AppBar(
           title: Text(
             "Movimientos",
-            style: TextStyle(color: Colors.white), // Text color is set to white
+            style: TextStyle(color: Colors.white),
           ),
           backgroundColor: Color(0xFF1A1C60),
         ),
@@ -29,21 +82,16 @@ class _MovimientosState extends State<Movimientos> {
                 children: [
                   SizedBox(height: 15),
                   Expanded(
-                    child: ListView(
-                      children: [
-                        _buildMovimientoItem("Movimiento 1",
-                            "Descripción del movimiento 1", "\$100.00"),
-                        _buildMovimientoItem("Movimiento 2",
-                            "Descripción del movimiento 2", "\$200.00"),
-                        _buildMovimientoItem("Movimiento 3",
-                            "Descripción del movimiento 3", "\$300.00"),
-                        _buildMovimientoItem("Movimiento 4",
-                            "Descripción del movimiento 4", "\$400.00"),
-                        _buildMovimientoItem("Movimiento 5",
-                            "Descripción del movimiento 5", "\$500.00"),
-                        _buildMovimientoItem("Movimiento 6",
-                            "Descripción del movimiento 6", "\$600.00"),
-                      ],
+                    child: ListView.builder(
+                      itemCount: movimientos.length,
+                      itemBuilder: (context, index) {
+                        final movimiento = movimientos[index];
+                        return _buildMovimientoItem(
+                          movimiento['tipo'],
+                          movimiento['descripcion'],
+                          '\$${movimiento['cantidad'].toStringAsFixed(2)}',
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -54,78 +102,23 @@ class _MovimientosState extends State<Movimientos> {
                   padding: EdgeInsets.all(20.0),
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      shape: CircleBorder(), // Make the button circular
-                      padding:
-                          EdgeInsets.all(20), // Padding around the button icon
-                      backgroundColor:
-                          Colors.white, // Assign color to the ElevatedButton
+                      shape: CircleBorder(),
+                      padding: EdgeInsets.all(20),
+                      backgroundColor: Colors.white,
                     ),
                     onPressed: () {
                       openCreateDialog();
                     },
                     child: Icon(
                       Icons.add,
-                      color: Color(
-                          0xFFF2003D), // Set the color of the Icon to white
-                      size: 30, // Adjust the size of the icon
+                      color: Color(0xFFF2003D),
+                      size: 30,
                     ),
                   ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMovimientoItem(String title, String subtitle, String value) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20),
-      child: ListTile(
-        title: Text(title, style: TextStyle(color: Colors.white)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(subtitle, style: TextStyle(color: Colors.white70)),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(value, style: TextStyle(color: Colors.white)),
-                Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        openEditDialog(title, subtitle, value);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Color(0xFF27D0C6), // Blue background color
-                        shape: CircleBorder(), // Make the button circular
-                        minimumSize: Size(36, 36), // Set the size of the button
-                      ),
-                      child: Icon(Icons.edit,
-                          color: Colors.white,
-                          size: 18), // Adjust the size of the icon
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        openDeleteDialog(title);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFF2003D),
-                        shape: CircleBorder(),
-                        minimumSize: Size(36, 36),
-                      ),
-                      child: Icon(Icons.delete, color: Colors.white, size: 18),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ],
         ),
       ),
     );
@@ -143,9 +136,9 @@ class _MovimientosState extends State<Movimientos> {
                   hintText: "Ingrese el nombre del movimiento",
                 ),
               ),
-              SizedBox(height: 8), // Espacio entre los TextFields
+              SizedBox(height: 8),
               TextField(
-                maxLines: 3, // Ajusta el número de líneas según sea necesario
+                maxLines: 3,
                 decoration: InputDecoration(
                   hintText: "Ingrese la descripción del movimiento",
                 ),
@@ -153,7 +146,8 @@ class _MovimientosState extends State<Movimientos> {
               TextField(
                 decoration: InputDecoration(
                   hintText: "Ingrese el valor del movimiento",
-                ),),
+                ),
+              ),
             ],
           ),
           actions: [
@@ -185,15 +179,15 @@ class _MovimientosState extends State<Movimientos> {
                 ),
                 controller: TextEditingController(text: title),
               ),
-              SizedBox(height: 8), // Espacio entre los TextFields
+              SizedBox(height: 8),
               TextField(
-                maxLines: 3, // Ajusta el número de líneas según sea necesario
+                maxLines: 3,
                 decoration: InputDecoration(
                   hintText: "Ingrese la nueva descripción del movimiento",
                 ),
                 controller: TextEditingController(text: subtitle),
               ),
-              SizedBox(height: 8), // Espacio entre los TextFields
+              SizedBox(height: 8),
               TextField(
                 decoration: InputDecoration(
                   hintText: "Ingrese el nuevo valor del movimiento",
