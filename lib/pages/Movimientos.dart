@@ -61,6 +61,15 @@ class _MovimientosState extends State<Movimientos> {
     );
   }
 
+  Widget _buildEmptyMessage() {
+    return Center(
+      child: Text(
+        "No hay movimientos para mostrar",
+        style: TextStyle(color: Colors.white, fontSize: 18),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -80,17 +89,19 @@ class _MovimientosState extends State<Movimientos> {
                 children: [
                   SizedBox(height: 15),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: movimientos.length,
-                      itemBuilder: (context, index) {
-                        final movimiento = movimientos[index];
-                        return _buildMovimientoItem(
-                          movimiento['tipo'],
-                          movimiento['descripcion'],
-                          '\$${movimiento['cantidad'].toStringAsFixed(2)}',
-                        );
-                      },
-                    ),
+                    child: movimientos.isEmpty
+                        ? _buildEmptyMessage()
+                        : ListView.builder(
+                            itemCount: movimientos.length,
+                            itemBuilder: (context, index) {
+                              final movimiento = movimientos[index];
+                              return _buildMovimientoItem(
+                                movimiento['tipo'],
+                                movimiento['descripcion'],
+                                '\$${movimiento['cantidad'].toStringAsFixed(2)}',
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
