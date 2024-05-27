@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 
 
 class Db {
-  String name = "DiaryApp";
+  String name = "SmartBudget";
   int version = 1;
 
   Future<Database> open() async {
