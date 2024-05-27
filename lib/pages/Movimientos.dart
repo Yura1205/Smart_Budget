@@ -1,5 +1,3 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
 
 class Movimientos extends StatefulWidget {
@@ -61,7 +59,7 @@ class _MovimientosState extends State<Movimientos> {
                           Colors.white, // Assign color to the ElevatedButton
                     ),
                     onPressed: () {
-                      openCreateDialog();
+                      openOptionDialog(); // Abre el diálogo de opciones
                     },
                     child: Icon(
                       Icons.add,
@@ -97,7 +95,7 @@ class _MovimientosState extends State<Movimientos> {
                   children: [
                     ElevatedButton(
                       onPressed: () {
-                        openEditDialog(title, subtitle, value);
+                        // Add your edit logic here
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
@@ -112,7 +110,7 @@ class _MovimientosState extends State<Movimientos> {
                     SizedBox(width: 8),
                     ElevatedButton(
                       onPressed: () {
-                        openDeleteDialog(title);
+                        openDialog();
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFFF2003D),
@@ -131,10 +129,38 @@ class _MovimientosState extends State<Movimientos> {
     );
   }
 
-  Future openCreateDialog() => showDialog(
+  // Método para abrir el diálogo con opciones
+  Future openOptionDialog() => showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text("Crear Registro"),
+          title: Text("Seleccionar Tipo"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text("Gasto"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  openCreateDialog("Gasto");
+                },
+              ),
+              ListTile(
+                title: Text("Ingreso"),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  openCreateDialog("Ingreso");
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+
+  // Método para abrir el diálogo de crear registro
+  Future openCreateDialog(String type) => showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Crear $type"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -153,7 +179,8 @@ class _MovimientosState extends State<Movimientos> {
               TextField(
                 decoration: InputDecoration(
                   hintText: "Ingrese el valor del movimiento",
-                ),),
+                ),
+              ),
             ],
           ),
           actions: [
@@ -172,33 +199,25 @@ class _MovimientosState extends State<Movimientos> {
         ),
       );
 
-  Future openEditDialog(String title, String subtitle, String value) => showDialog(
+  // Método original de eliminar para referencia
+  Future openDialog() => showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text("Editar Registro"),
+          title: Text("Crear Registro"),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 decoration: InputDecoration(
-                  hintText: "Ingrese el nuevo nombre del movimiento",
+                  hintText: "Ingrese el nombre del movimiento",
                 ),
-                controller: TextEditingController(text: title),
               ),
               SizedBox(height: 8), // Espacio entre los TextFields
               TextField(
                 maxLines: 3, // Ajusta el número de líneas según sea necesario
                 decoration: InputDecoration(
-                  hintText: "Ingrese la nueva descripción del movimiento",
+                  hintText: "Ingrese la descripción del movimiento",
                 ),
-                controller: TextEditingController(text: subtitle),
-              ),
-              SizedBox(height: 8), // Espacio entre los TextFields
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Ingrese el nuevo valor del movimiento",
-                ),
-                controller: TextEditingController(text: value),
               ),
             ],
           ),
@@ -209,31 +228,10 @@ class _MovimientosState extends State<Movimientos> {
             ),
             TextButton(
               onPressed: () {
-                // Lógica para editar el registro
+                // Lógica para crear el registro
                 Navigator.of(context).pop();
               },
-              child: Text("Guardar"),
-            ),
-          ],
-        ),
-      );
-
-  Future openDeleteDialog(String title) => showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Eliminar Registro"),
-          content: Text("¿Está seguro que desea eliminar el movimiento \"$title\"?"),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("Cancelar"),
-            ),
-            TextButton(
-              onPressed: () {
-                // Lógica para eliminar el registro
-                Navigator.of(context).pop();
-              },
-              child: Text("Eliminar"),
+              child: Text("Crear"),
             ),
           ],
         ),

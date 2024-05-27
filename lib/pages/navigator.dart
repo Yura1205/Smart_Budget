@@ -15,7 +15,7 @@ class MyNavigator extends StatefulWidget {
 }
 
 class _MyNavigator extends State<MyNavigator> {
-  int _currentIndex = 0;
+  int _currentIndex = 2;
   final List<Widget> _children = [
     Busqueda(),
     Movimientos(),
