@@ -53,11 +53,121 @@ class _MovimientosState extends State<Movimientos> {
     });
   }
 
-  Widget _buildMovimientoItem(String tipo, String descripcion, String cantidad) {
+  Future<void> _addMovimiento(String type, String descripcion, double cantidad, String categoria) async {
+    if (_database == null) return;
+
+    String table = type.toLowerCase();
+
+    await _database!.insert(
+      table,
+      {
+        'descripcion': descripcion,
+        'cantidad': cantidad,
+        'fecha': DateTime.now().toIso8601String(), // Opcional, ya que se maneja por la DB
+        'categoria': categoria,
+        'balanceId': null,  // Si tienes un balanceId disponible, puedes pasarlo aquí
+      },
+    );
+
+    await _loadMovimientos();
+  }
+
+  Future<void> _editMovimiento(int id, String type, String descripcion, double cantidad, String categoria) async {
+    if (_database == null) return;
+
+    String table = type.toLowerCase();
+
+    await _database!.update(
+      table,
+      {
+        'descripcion': descripcion,
+        'cantidad': cantidad,
+        'categoria': categoria,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    await _loadMovimientos();
+  }
+
+  Future<void> _deleteMovimiento(int id, String type) async {
+    if (_database == null) return;
+
+    String table = type.toLowerCase();
+
+    await _database!.delete(
+      table,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    await _loadMovimientos();
+  }
+
+  Widget _buildMovimientoItem(Map<String, dynamic> movimiento) {
+    final tipo = movimiento['tipo'];
+    final descripcion = movimiento['descripcion'];
+    final cantidad = movimiento['cantidad'];
+    final id = movimiento['id'];
+    final categoria = movimiento['categoria'];
+
     return ListTile(
       title: Text(tipo, style: TextStyle(color: Colors.white)),
-      subtitle: Text(descripcion, style: TextStyle(color: Colors.white70)),
-      trailing: Text(cantidad, style: TextStyle(color: Colors.white)),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(descripcion, style: TextStyle(color: Colors.white70)),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '\$${cantidad.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: tipo == 'Gasto' ? Color(0xFFF2003D) : Color(0xFF27D0C6),
+                ),
+              ),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      openEditDialog(id, tipo, descripcion, cantidad, categoria);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF27D0C6), 
+                      shape: CircleBorder(), 
+                      minimumSize: Size(36, 36), 
+                    ),
+                    child: Icon(Icons.edit, color: Colors.white, size: 18), 
+                  ),
+                  SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _deleteMovimiento(id, tipo);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFF2003D),
+                      shape: CircleBorder(),
+                      minimumSize: Size(36, 36),
+                    ),
+                    child: Icon(Icons.delete, color: Colors.white, size: 18),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyMessage() {
+    return Center(
+      child: Text(
+        "No hay movimientos para mostrar",
+        style: TextStyle(color: Colors.white, fontSize: 18),
+      ),
     );
   }
 
@@ -80,17 +190,15 @@ class _MovimientosState extends State<Movimientos> {
                 children: [
                   SizedBox(height: 15),
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: movimientos.length,
-                      itemBuilder: (context, index) {
-                        final movimiento = movimientos[index];
-                        return _buildMovimientoItem(
-                          movimiento['tipo'],
-                          movimiento['descripcion'],
-                          '\$${movimiento['cantidad'].toStringAsFixed(2)}',
-                        );
-                      },
-                    ),
+                    child: movimientos.isEmpty
+                        ? _buildEmptyMessage()
+                        : ListView.builder(
+                            itemCount: movimientos.length,
+                            itemBuilder: (context, index) {
+                              final movimiento = movimientos[index];
+                              return _buildMovimientoItem(movimiento);
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -105,7 +213,7 @@ class _MovimientosState extends State<Movimientos> {
                       backgroundColor: Colors.white,
                     ),
                     onPressed: () {
-                      openOptionDialog(); // Abre el diálogo de opciones
+                      openOptionDialog(); 
                     },
                     child: Icon(
                       Icons.add,
@@ -122,7 +230,7 @@ class _MovimientosState extends State<Movimientos> {
     );
   }
 
-  // Método para abrir el diálogo con opciones
+
   Future openOptionDialog() => showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -149,124 +257,123 @@ class _MovimientosState extends State<Movimientos> {
         ),
       );
 
-  // Método para abrir el diálogo de crear registro
+
   Future openCreateDialog(String type) => showDialog(
         context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Crear $type"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Ingrese el nombre del movimiento",
-                ),
-              ),
-              SizedBox(height: 8),
-              TextField(
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: "Ingrese la descripción del movimiento",
-                ),
-              ),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: "Ingrese el valor del movimiento",
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("Cancelar"),
-            ),
-            TextButton(
-              onPressed: () {
-                // Lógica para crear el registro
-                Navigator.of(context).pop();
-              },
-              child: Text("Crear"),
-            ),
-          ],
-        ),
-      );
+        builder: (context) {
+          final _descripcionController = TextEditingController();
+          final _cantidadController = TextEditingController();
+          final _categoriaController = TextEditingController();
 
-  // Método original de eliminar para referencia
-  Future openDialog() => showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text("Eliminar Registro"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text("¿Estás seguro de que quieres eliminar este registro?"),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text("Cancelar"),
-            ),
-            TextButton(
-              onPressed: () {
-                // Lógica para eliminar el registro
-                Navigator.of(context).pop();
-              },
-              child: Text("Eliminar"),
-            ),
-          ],
-        ),
-      );
-
-  Widget _buildMovimientoItemWithActions(String title, String subtitle, String value) {
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 20),
-      child: ListTile(
-        title: Text(title, style: TextStyle(color: Colors.white)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(subtitle, style: TextStyle(color: Colors.white70)),
-            SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          return AlertDialog(
+            title: Text("Crear $type"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text(value, style: TextStyle(color: Colors.white)),
-                Row(
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        // Add your edit logic here
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF27D0C6), // Blue background color
-                        shape: CircleBorder(), // Make the button circular
-                        minimumSize: Size(36, 36), // Set the size of the button
-                      ),
-                      child: Icon(Icons.edit,
-                          color: Colors.white,
-                          size: 18), // Adjust the size of the icon
-                    ),
-                    SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () {
-                        openDialog();
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFFF2003D),
-                        shape: CircleBorder(),
-                        minimumSize: Size(36, 36),
-                      ),
-                      child: Icon(Icons.delete, color: Colors.white, size: 18),
-                    ),
-                  ],
+                TextField(
+                  controller: _descripcionController,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese la descripción del movimiento",
+                  ),
+                ),
+                SizedBox(height: 8),
+                TextField(
+                  controller: _cantidadController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese el valor del movimiento",
+                  ),
+                ),
+                SizedBox(height: 8),
+                TextField(
+                  controller: _categoriaController,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese la categoría del movimiento",
+                  ),
                 ),
               ],
             ),
-          ],
-        ),
-      ),
-    );
-  }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Cancelar"),
+              ),
+              TextButton(
+                onPressed: () {
+                  final descripcion = _descripcionController.text;
+                  final cantidad = double.tryParse(_cantidadController.text) ?? 0.0;
+                  final categoria = _categoriaController.text;
+
+                  if (descripcion.isNotEmpty && cantidad > 0 && categoria.isNotEmpty) {
+                    _addMovimiento(type, descripcion, cantidad, categoria);
+                  }
+
+                  Navigator.of(context).pop();
+                },
+                child: Text("Crear"),
+              ),
+            ],
+          );
+        },
+      );
+
+
+  Future openEditDialog(int id, String type, String descripcion, double cantidad, String categoria) => showDialog(
+        context: context,
+        builder: (context) {
+          final _descripcionController = TextEditingController(text: descripcion);
+          final _cantidadController = TextEditingController(text: cantidad.toString());
+          final _categoriaController = TextEditingController(text: categoria);
+
+          return AlertDialog(
+            title: Text("Editar $type"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _descripcionController,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese la descripción del movimiento",
+                  ),
+                ),
+                SizedBox(height: 8),
+                TextField(
+                  controller: _cantidadController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese el valor del movimiento",
+                  ),
+                ),
+                SizedBox(height: 8),
+                TextField(
+                  controller: _categoriaController,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese la categoría del movimiento",
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Cancelar"),
+              ),
+              TextButton(
+                onPressed: () {
+                  final descripcion = _descripcionController.text;
+                  final cantidad = double.tryParse(_cantidadController.text) ?? 0.0;
+                  final categoria = _categoriaController.text;
+
+                  if (descripcion.isNotEmpty && cantidad > 0 && categoria.isNotEmpty) {
+                    _editMovimiento(id, type, descripcion, cantidad, categoria);
+                  }
+
+                  Navigator.of(context).pop();
+                },
+                child: Text("Guardar"),
+              ),
+            ],
+          );
+        },
+      );
 }
