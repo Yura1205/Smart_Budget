@@ -12,6 +12,7 @@ class Movimientos extends StatefulWidget {
 class _MovimientosState extends State<Movimientos> {
   List<Map<String, dynamic>> movimientos = [];
   Database? _database;
+  final Db _dbHelper = Db();
 
   @override
   void initState() {
@@ -26,22 +27,27 @@ class _MovimientosState extends State<Movimientos> {
   }
 
   Future<void> _initDb() async {
-    _database = await Db().open();
+    _database = await _dbHelper.open();
+    await _deleteOldRecords();
     await _loadMovimientos();
+  }
+
+  Future<void> _deleteOldRecords() async {
+    await _dbHelper.deleteRecordsWithNullBalanceId();
   }
 
   Future<void> _loadMovimientos() async {
     if (_database == null) return;
 
     final gastos = await _database!.rawQuery('''
-      SELECT "Gasto" as tipo, cantidad, fecha, categoria, descripcion 
+      SELECT "Gasto" as tipo, cantidad, fecha, categoria, descripcion, id
       FROM gasto 
       WHERE fecha >= date('now', '-1 month') 
       ORDER BY fecha DESC
     ''');
 
     final ingresos = await _database!.rawQuery('''
-      SELECT "Ingreso" as tipo, cantidad, fecha, categoria, descripcion 
+      SELECT "Ingreso" as tipo, cantidad, fecha, categoria, descripcion, id
       FROM ingreso 
       WHERE fecha >= date('now', '-1 month') 
       ORDER BY fecha DESC
@@ -54,23 +60,46 @@ class _MovimientosState extends State<Movimientos> {
   }
 
   Future<void> _addMovimiento(String type, String descripcion, double cantidad, String categoria) async {
-    if (_database == null) return;
+  if (_database == null) return;
 
-    String table = type.toLowerCase();
+  String table = type.toLowerCase();
 
+  // Obtener el mes y año actuales
+  final now = DateTime.now();
+  final month = now.month;
+  final year = now.year;
+
+  final balanceId = '${month.toString().padLeft(2, '0')}${year.toString().substring(2)}';
+  final balance = await _database!.query('balance', where: 'id =?', whereArgs: [balanceId]);
+  if (balance.isEmpty) {
+    // Si no existe, crear un nuevo balance con el balanceId correspondiente
+    final fechaInicio = DateTime(year, month, 1);
     await _database!.insert(
-      table,
+      'balance',
       {
-        'descripcion': descripcion,
-        'cantidad': cantidad,
-        'fecha': DateTime.now().toIso8601String(), // Opcional, ya que se maneja por la DB
-        'categoria': categoria,
-        'balanceId': null,  // Si tienes un balanceId disponible, puedes pasarlo aquí
+        'id': balanceId,
+        'nombre': 'Balance${month.toString().padLeft(2, '0')}',
+        'fechaInicio': fechaInicio.toIso8601String(),
+        'limiteGastos': 10000000,
+        'porcentajeDeError': 3,
       },
     );
-
-    await _loadMovimientos();
   }
+
+  // Continuar con la creación del movimiento
+  await _database!.insert(
+    table,
+    {
+      'descripcion': descripcion,
+      'cantidad': cantidad,
+      'fecha': DateTime.now().toIso8601String(), 
+      'categoria': categoria,
+      'balanceId': '${month.toString().padLeft(2, '0')}${year.toString().substring(2)}',  
+    },
+  );
+
+  await _loadMovimientos();
+}
 
   Future<void> _editMovimiento(int id, String type, String descripcion, double cantidad, String categoria) async {
     if (_database == null) return;
@@ -230,7 +259,6 @@ class _MovimientosState extends State<Movimientos> {
     );
   }
 
-
   Future openOptionDialog() => showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -256,7 +284,6 @@ class _MovimientosState extends State<Movimientos> {
           ),
         ),
       );
-
 
   Future openCreateDialog(String type) => showDialog(
         context: context,
@@ -295,28 +322,25 @@ class _MovimientosState extends State<Movimientos> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
                 child: Text("Cancelar"),
               ),
               TextButton(
                 onPressed: () {
                   final descripcion = _descripcionController.text;
-                  final cantidad = double.tryParse(_cantidadController.text) ?? 0.0;
+                  final cantidad = double.parse(_cantidadController.text);
                   final categoria = _categoriaController.text;
-
-                  if (descripcion.isNotEmpty && cantidad > 0 && categoria.isNotEmpty) {
-                    _addMovimiento(type, descripcion, cantidad, categoria);
-                  }
-
+                  _addMovimiento(type, descripcion, cantidad, categoria);
                   Navigator.of(context).pop();
                 },
-                child: Text("Crear"),
+                child: Text("Guardar"),
               ),
             ],
           );
         },
       );
-
 
   Future openEditDialog(int id, String type, String descripcion, double cantidad, String categoria) => showDialog(
         context: context,
@@ -355,19 +379,17 @@ class _MovimientosState extends State<Movimientos> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
                 child: Text("Cancelar"),
               ),
               TextButton(
                 onPressed: () {
                   final descripcion = _descripcionController.text;
-                  final cantidad = double.tryParse(_cantidadController.text) ?? 0.0;
+                  final cantidad = double.parse(_cantidadController.text);
                   final categoria = _categoriaController.text;
-
-                  if (descripcion.isNotEmpty && cantidad > 0 && categoria.isNotEmpty) {
-                    _editMovimiento(id, type, descripcion, cantidad, categoria);
-                  }
-
+                  _editMovimiento(id, type, descripcion, cantidad, categoria);
                   Navigator.of(context).pop();
                 },
                 child: Text("Guardar"),

@@ -26,7 +26,7 @@ List get tables => [
   ),
   _createTable(
     balanceTable,
-    "id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,"
+    "id INTEGER PRIMARY KEY,"
     "nombre TEXT,"
     "fechaInicio DATE,"
     "limiteGastos REAL,"
