@@ -72,15 +72,92 @@ class _MovimientosState extends State<Movimientos> {
     await _loadMovimientos();
   }
 
-  Widget _buildMovimientoItem(String tipo, String descripcion, double cantidad) {
+  Future<void> _editMovimiento(int id, String type, String descripcion, double cantidad, String categoria) async {
+    if (_database == null) return;
+
+    String table = type.toLowerCase();
+
+    await _database!.update(
+      table,
+      {
+        'descripcion': descripcion,
+        'cantidad': cantidad,
+        'categoria': categoria,
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    await _loadMovimientos();
+  }
+
+  Future<void> _deleteMovimiento(int id, String type) async {
+    if (_database == null) return;
+
+    String table = type.toLowerCase();
+
+    await _database!.delete(
+      table,
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    await _loadMovimientos();
+  }
+
+  Widget _buildMovimientoItem(Map<String, dynamic> movimiento) {
+    final tipo = movimiento['tipo'];
+    final descripcion = movimiento['descripcion'];
+    final cantidad = movimiento['cantidad'];
+    final id = movimiento['id'];
+    final categoria = movimiento['categoria'];
+
     return ListTile(
       title: Text(tipo, style: TextStyle(color: Colors.white)),
-      subtitle: Text(descripcion, style: TextStyle(color: Colors.white70)),
-      trailing: Text(
-        '\$${cantidad.toStringAsFixed(2)}',
-        style: TextStyle(
-          color: tipo == 'Gasto' ? Color(0xFFF2003D) : Color(0xFF27D0C6),
-        ),
+      subtitle: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(descripcion, style: TextStyle(color: Colors.white70)),
+          SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '\$${cantidad.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: tipo == 'Gasto' ? Color(0xFFF2003D) : Color(0xFF27D0C6),
+                ),
+              ),
+              Row(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      openEditDialog(id, tipo, descripcion, cantidad, categoria);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF27D0C6), 
+                      shape: CircleBorder(), 
+                      minimumSize: Size(36, 36), 
+                    ),
+                    child: Icon(Icons.edit, color: Colors.white, size: 18), 
+                  ),
+                  SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _deleteMovimiento(id, tipo);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFFF2003D),
+                      shape: CircleBorder(),
+                      minimumSize: Size(36, 36),
+                    ),
+                    child: Icon(Icons.delete, color: Colors.white, size: 18),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -119,11 +196,7 @@ class _MovimientosState extends State<Movimientos> {
                             itemCount: movimientos.length,
                             itemBuilder: (context, index) {
                               final movimiento = movimientos[index];
-                              return _buildMovimientoItem(
-                                movimiento['tipo'],
-                                movimiento['descripcion'],
-                                movimiento['cantidad'],
-                              );
+                              return _buildMovimientoItem(movimiento);
                             },
                           ),
                   ),
@@ -140,7 +213,7 @@ class _MovimientosState extends State<Movimientos> {
                       backgroundColor: Colors.white,
                     ),
                     onPressed: () {
-                      openOptionDialog(); // Abre el diálogo de opciones
+                      openOptionDialog(); 
                     },
                     child: Icon(
                       Icons.add,
@@ -157,7 +230,7 @@ class _MovimientosState extends State<Movimientos> {
     );
   }
 
-  // Método para abrir el diálogo con opciones
+
   Future openOptionDialog() => showDialog(
         context: context,
         builder: (context) => AlertDialog(
@@ -184,7 +257,7 @@ class _MovimientosState extends State<Movimientos> {
         ),
       );
 
-  // Método para abrir el diálogo de crear registro
+
   Future openCreateDialog(String type) => showDialog(
         context: context,
         builder: (context) {
@@ -238,6 +311,66 @@ class _MovimientosState extends State<Movimientos> {
                   Navigator.of(context).pop();
                 },
                 child: Text("Crear"),
+              ),
+            ],
+          );
+        },
+      );
+
+
+  Future openEditDialog(int id, String type, String descripcion, double cantidad, String categoria) => showDialog(
+        context: context,
+        builder: (context) {
+          final _descripcionController = TextEditingController(text: descripcion);
+          final _cantidadController = TextEditingController(text: cantidad.toString());
+          final _categoriaController = TextEditingController(text: categoria);
+
+          return AlertDialog(
+            title: Text("Editar $type"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _descripcionController,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese la descripción del movimiento",
+                  ),
+                ),
+                SizedBox(height: 8),
+                TextField(
+                  controller: _cantidadController,
+                  keyboardType: TextInputType.number,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese el valor del movimiento",
+                  ),
+                ),
+                SizedBox(height: 8),
+                TextField(
+                  controller: _categoriaController,
+                  decoration: InputDecoration(
+                    hintText: "Ingrese la categoría del movimiento",
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Cancelar"),
+              ),
+              TextButton(
+                onPressed: () {
+                  final descripcion = _descripcionController.text;
+                  final cantidad = double.tryParse(_cantidadController.text) ?? 0.0;
+                  final categoria = _categoriaController.text;
+
+                  if (descripcion.isNotEmpty && cantidad > 0 && categoria.isNotEmpty) {
+                    _editMovimiento(id, type, descripcion, cantidad, categoria);
+                  }
+
+                  Navigator.of(context).pop();
+                },
+                child: Text("Guardar"),
               ),
             ],
           );
