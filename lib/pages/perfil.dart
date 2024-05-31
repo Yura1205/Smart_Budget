@@ -21,8 +21,22 @@ class _Perfil extends State<Perfil> {
           backgroundColor: Color(0xFF1A1C60),
         ),
       body: Center(
-        child: Text("Perfil"),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+        Text(
+          "Esta página está en construcción.",
+          style: TextStyle(color: Colors.white, fontSize: 20.0),
+        ),
+        SizedBox(height: 10),
+        Icon(
+          Icons.construction,
+          color: Colors.white,
+          size: 30.0,
+        ),
+          ],
+        ),
       ),
-    ));
+    ))    ;
   }
 }
