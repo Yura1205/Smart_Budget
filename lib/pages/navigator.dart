@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:smart_budget_app/pages/BusquedaMovimientos.dart';
 import 'package:smart_budget_app/pages/Movimientos.dart';
-import 'package:smart_budget_app/pages/Balance.dart';
+import 'package:smart_budget_app/pages/BalancePage.dart';
 import 'package:smart_budget_app/pages/MenuPrincipal.dart';
 import 'package:smart_budget_app/pages/Perfil.dart';
 
@@ -15,12 +15,12 @@ class MyNavigator extends StatefulWidget {
 }
 
 class _MyNavigator extends State<MyNavigator> {
-  int _currentIndex = 2;
+  int _currentIndex = 1;
   final List<Widget> _children = [
     Busqueda(),
     Movimientos(),
-    MyHomePage(),
-    Balance(),
+    //MyHomePage(),
+    BalancePage(),
     Perfil()
   ];
 
@@ -50,10 +50,10 @@ class _MyNavigator extends State<MyNavigator> {
             icon: Icon(Icons.checklist_rtl),
             label: "Movimientos",
           ),
-          BottomNavigationBarItem(
+          /*BottomNavigationBarItem(
             icon: Icon(Icons.home_rounded),
             label: "Menu",
-          ),
+          ),*/
           BottomNavigationBarItem(
             icon: Icon(Icons.account_balance_wallet),
             label: "Balance",

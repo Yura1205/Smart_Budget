@@ -30,4 +30,13 @@ class Balance extends Crud {
   Future<int> deleteBalance(int id) async {
     return await delete(id);
   }
+
+  Future<Map<String, List<Map<String, dynamic>>>> getGastosIngresosPorBalance(int balanceId) async {
+    final gastos = await query('SELECT * FROM gasto WHERE balanceId = ?', arguments: [balanceId]);
+    final ingresos = await query('SELECT * FROM ingreso WHERE balanceId = ?', arguments: [balanceId]);
+    return {
+      'gastos': gastos,
+      'ingresos': ingresos,
+    };
+  }
 }
