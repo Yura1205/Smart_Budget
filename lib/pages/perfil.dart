@@ -13,30 +13,30 @@ class _Perfil extends State<Perfil> {
     return SafeArea(
         child: Scaffold(
       backgroundColor: Color(0xFF1A1C60),
-        appBar: AppBar(
-          title: Text(
-            "Perfil",
-            style: TextStyle(color: Colors.white), // Text color is set to white
-          ),
-          backgroundColor: Color(0xFF1A1C60),
+      appBar: AppBar(
+        title: Text(
+          "Perfil",
+          style: TextStyle(color: Colors.white), // Text color is set to white
         ),
+        backgroundColor: Color(0xFF1A1C60),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-        Text(
-          "Esta página está en construcción.",
-          style: TextStyle(color: Colors.white, fontSize: 20.0),
-        ),
-        SizedBox(height: 10),
-        Icon(
-          Icons.construction,
-          color: Colors.white,
-          size: 30.0,
-        ),
+            Text(
+              "Esta página está en construcción.",
+              style: TextStyle(color: Colors.white, fontSize: 20.0),
+            ),
+            SizedBox(height: 10),
+            Icon(
+              Icons.construction,
+              color: Colors.white,
+              size: 30.0,
+            ),
           ],
         ),
       ),
-    ))    ;
+    ));
   }
 }
